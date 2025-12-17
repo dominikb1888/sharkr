@@ -1,17 +1,25 @@
-use pcap::{Device, Capture};
+use sharkr::cli;
+use sharkr::capture;
+use sharkr::error;
+use sharkr::interfaces;
 
-fn main() {
-    let devices = Device::list().unwrap();
-    for (id, device) in devices.clone().into_iter().enumerate() {
-        println!("{id} | {} | {:?}", device.name, device.flags.connection_status);
+use anyhow::Result;
+use clap::Parser;
+use cli::Cli;
+use error::SharkrError;
+
+fn main() -> Result<()> {
+    let cli = Cli::parse();
+
+    if cli.list {
+        interfaces::list_interfaces()?;
+        return Ok(());
     }
 
-    let mut cap = Capture::from_device(devices[1].clone()).unwrap()
-        .open().unwrap();
+    let iface = cli.iface.as_deref().ok_or(SharkrError::MissingInterface)?;
 
-    while let Ok(packet) = cap.next_packet() {
-        println!("received packet! {:?}", packet);
-    }
+    capture::capture(iface, cli.output.as_deref())?;
+
+    Ok(())
 }
-
 
