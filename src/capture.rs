@@ -1,4 +1,4 @@
-use pcap::{Active, Capture, Device, Savefile};
+use pcap::{Capture, Device, Savefile};
 use crate::error::SharkrError;
 
 pub fn capture(

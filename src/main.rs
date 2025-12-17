@@ -1,12 +1,10 @@
-use sharkr::cli;
+use sharkr::cli::Cli;
 use sharkr::capture;
-use sharkr::error;
+use sharkr::error::SharkrError;
 use sharkr::interfaces;
 
 use anyhow::Result;
 use clap::Parser;
-use cli::Cli;
-use error::SharkrError;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -16,10 +14,14 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    let iface = cli.iface.as_deref().ok_or(SharkrError::MissingInterface)?;
+    let iface = cli
+        .iface
+        .as_deref()
+        .ok_or(SharkrError::MissingInterface)?;
 
     capture::capture(iface, cli.output.as_deref())?;
 
     Ok(())
 }
+
 
