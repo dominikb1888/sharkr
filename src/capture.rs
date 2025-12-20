@@ -1,5 +1,6 @@
 use pcap::{Capture, Device};
 use crate::error::SharkrError;
+use crate::packet_parser::{parse_packet};
 
 pub fn capture(
     iface: &str,
@@ -20,25 +21,22 @@ pub fn capture(
 
     println!("DLT: {:?}", cap.get_datalink());
 
+    let is_loopback = matches!(cap.get_datalink(), pcap::Linktype(0));
+
     loop {
         match cap.next_packet() {
             Ok(packet) => {
-                println!(
-                    "len={} ts={}.{} data={:?}",
-
-                    packet.header.len,
-                    packet.header.ts.tv_sec,
-                    packet.header.ts.tv_usec,
-                    packet.data,
-                );
+                match parse_packet(&packet.data, is_loopback) {
+                    Ok(parsed) => {
+                        println!("{:?}", parsed);
+                    }
+                    Err(e) => {
+                        println!("{}", e);
+                    }
+                }
             }
-            Err(pcap::Error::TimeoutExpired) => {
-                // normal — ignore
-            }
-            Err(e) => {
-                return Err(e.into());
-            }
-        }
+            Err(pcap::Error::TimeoutExpired) => continue,
+            Err(e) => return Err(e.into()),        }
     }
 }
 
