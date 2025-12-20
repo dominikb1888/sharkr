@@ -1,40 +1,44 @@
-use pcap::{Capture, Device, Savefile};
+use pcap::{Capture, Device};
 use crate::error::SharkrError;
 
 pub fn capture(
     iface: &str,
-    output: Option<&str>,
+    _output: Option<&str>,
 ) -> Result<(), SharkrError> {
     let device = Device::list()?
         .into_iter()
         .find(|d| d.name == iface)
         .ok_or_else(|| SharkrError::InterfaceNotFound(iface.into()))?;
 
-    let mut cap = Capture::from_device(device)?
-        .promisc(true)
+    let inactive = Capture::from_device(device)?
         .snaplen(65535)
-        .open()?;
+        .timeout(1)
+        .immediate_mode(true);
 
-    let mut savefile: Option<Savefile> = match output {
-        Some(path) => Some(cap.savefile(path)?),
-        None => None,
-    };
+    let mut cap = inactive.open()?;
+    cap.direction(pcap::Direction::InOut)?;
 
-    println!("Listening on {iface}… press Ctrl+C to stop");
+    println!("DLT: {:?}", cap.get_datalink());
 
-    while let Ok(packet) = cap.next_packet() {
-        println!(
-            "len={} ts={}.{}",
-            packet.header.len,
-            packet.header.ts.tv_sec,
-            packet.header.ts.tv_usec
-        );
+    loop {
+        match cap.next_packet() {
+            Ok(packet) => {
+                println!(
+                    "len={} ts={}.{} data={:?}",
 
-        if let Some(ref mut sf) = savefile {
-            sf.write(&packet);
+                    packet.header.len,
+                    packet.header.ts.tv_sec,
+                    packet.header.ts.tv_usec,
+                    packet.data,
+                );
+            }
+            Err(pcap::Error::TimeoutExpired) => {
+                // normal — ignore
+            }
+            Err(e) => {
+                return Err(e.into());
+            }
         }
     }
-
-    Ok(())
 }
 
