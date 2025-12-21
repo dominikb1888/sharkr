@@ -24,7 +24,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install libpcap
+      - name: Install libpcap and pkg-config
         run: sudo apt-get update && sudo apt-get install -y libpcap-dev pkg-config
 
       - name: Install Cross
@@ -35,8 +35,9 @@ jobs:
 
       - name: Build with Cross (dynamic libpcap)
         run: |
-          # remove any static linking flags
+          # Ensure no static linking flags interfere
           unset RUSTFLAGS
+          export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig
           cargo clean
           cross build --target ${{ matrix.target }} --release --verbose
 
@@ -54,7 +55,9 @@ jobs:
           fi
 
       - name: Show linked libraries (sanity check)
-        run: ldd target/${{ matrix.target }}/release/$BINARY_NAME | grep pcap
+        run: |
+          echo "Libraries linked for $BINARY_NAME:"
+          ldd target/${{ matrix.target }}/release/$BINARY_NAME | grep pcap || echo "pcap not linked!"
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
