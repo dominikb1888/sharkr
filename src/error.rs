@@ -10,5 +10,15 @@ pub enum SharkrError {
 
     #[error("no interface specified (use --iface)")]
     MissingInterface,
+
+    #[error(
+        "libpcap could not be initialized ({0}).\n\n\
+        Make sure libpcap is installed:\n\
+          Debian/Ubuntu: sudo apt install libpcap1\n\
+          Fedora:        sudo dnf install libpcap\n\
+          Arch:          sudo pacman -S libpcap\n\n\
+        If cross-compiling, ensure the target system has libpcap installed."
+    )]
+    PcapInitFailed(String),
 }
 

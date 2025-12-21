@@ -11,8 +11,8 @@ jobs:
     strategy:
       matrix:
         target:
-          - x86_64-unknown-linux-musl       # Linux (musl)
-          - aarch64-unknown-linux-musl      # ARM Linux (musl)
+          - x86_64-unknown-linux-gnu       # Linux (gnu)
+          - aarch64-unknown-linux-gnu      # ARM Linux (gnu)
 
     env:
       BINARY_NAME: commr
