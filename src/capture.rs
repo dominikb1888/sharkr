@@ -26,17 +26,11 @@ pub fn capture(
     loop {
         match cap.next_packet() {
             Ok(packet) => {
-                match parse_packet(&packet.data, is_loopback) {
-                    Ok(parsed) => {
-                        println!("{:?}", parsed);
-                    }
-                    Err(e) => {
-                        println!("{}", e);
-                    }
-                }
+                println!("{:?}", parse_packet(&packet, is_loopback));
             }
             Err(pcap::Error::TimeoutExpired) => continue,
-            Err(e) => return Err(e.into()),        }
+            Err(e) => return Err(e.into()),
+        }
     }
 }
 

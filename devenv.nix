@@ -6,6 +6,10 @@
   packages = [
     pkgs.git
     pkgs.libpcap
+    pkgs.bundler
+    pkgs.rubyPackages.jekyll
+    pkgs.rubyPackages.jekyll-theme-minimal
+
   ];
 
   # https://devenv.sh/basics/
