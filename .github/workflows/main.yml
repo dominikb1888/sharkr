@@ -24,6 +24,9 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install libpcap
+        run: sudo apt-get update && sudo apt-get install libpcap-dev
+
       - name: Install Cross
         run: cargo install cross
 
@@ -55,5 +58,5 @@ jobs:
             *.tar.gz
             *.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.COMMR }}
+          GITHUB_TOKEN: ${{ secrets.SHARKR }}
 
