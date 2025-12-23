@@ -3,11 +3,12 @@ name: Release Rust Binary
 on:
   push:
     tags:
-      - 'v*'  # Trigger on tags like 'v1.0.0'
+      - "v*"
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
         target:
@@ -18,53 +19,42 @@ jobs:
       BINARY_NAME: sharkr
 
     steps:
-      - name: Checkout code
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Install Rust
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install libpcap and pkg-config
-        run: sudo apt-get update && sudo apt-get install -y libpcap-dev pkg-config
-
       - name: Install Cross
-        run: cargo install cross
+        run: cargo install cross --locked
 
-      - name: Add Rust target
-        run: rustup target add ${{ matrix.target }}
-
-      - name: Build with Cross (dynamic libpcap)
+      - name: Build release binary
         run: |
-          # Ensure no static linking flags interfere
-          unset RUSTFLAGS
-          export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig
-          cargo clean
-          cross build --target ${{ matrix.target }} --release --verbose
+          cross build \
+            --target ${{ matrix.target }} \
+            --release \
+            --verbose
 
-      - name: Prepare release folder
+      - name: Prepare release artifacts
         run: |
           mkdir -p release
-          cp target/${{ matrix.target }}/release/$BINARY_NAME release/
+          cp target/${{ matrix.target }}/release/${BINARY_NAME} release/
 
-      - name: Create release archive
+      - name: Package artifact
         run: |
-          if [[ "${{ matrix.target }}" == *"windows"* ]]; then
-            zip -r ${{ matrix.target }}.zip release
-          else
-            tar -czvf ${{ matrix.target }}.tar.gz -C release $BINARY_NAME
-          fi
+          tar -czf ${BINARY_NAME}-${{ matrix.target }}.tar.gz \
+            -C release ${BINARY_NAME}
 
-      - name: Show linked libraries (sanity check)
+      - name: Sanity check linked libraries
         run: |
-          echo "Libraries linked for $BINARY_NAME:"
-          ldd target/${{ matrix.target }}/release/$BINARY_NAME | grep pcap || echo "pcap not linked!"
+          echo "Linked libraries:"
+          ldd target/${{ matrix.target }}/release/${BINARY_NAME} || true
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
             *.tar.gz
-            *.zip
         env:
           GITHUB_TOKEN: ${{ secrets.SHARKR }}
 
