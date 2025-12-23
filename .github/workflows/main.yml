@@ -5,6 +5,12 @@ on:
     tags:
       - "v*"
 
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: ""
+        required: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
