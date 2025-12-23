@@ -4,15 +4,10 @@ on:
   push:
     tags:
       - "v*"
-
   workflow_dispatch:
-    inputs:
-      release_tag:
-        description: ""
-        required: false
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     strategy:
@@ -25,42 +20,27 @@ jobs:
       BINARY_NAME: sharkr
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
 
-      - name: Install Cross
+      - name: Install cross
         run: cargo install cross --locked
 
-      - name: Build release binary
-        run: |
-          cross build \
-            --target ${{ matrix.target }} \
-            --release \
-            --verbose
+      - name: Build (${{ matrix.target }})
+        run: cross build --release --target ${{ matrix.target }}
 
-      - name: Prepare release artifacts
+      - name: Package (${{ matrix.target }})
         run: |
-          mkdir -p release
-          cp target/${{ matrix.target }}/release/${BINARY_NAME} release/
-
-      - name: Package artifact
-        run: |
-          tar -czf ${BINARY_NAME}-${{ matrix.target }}.tar.gz \
-            -C release ${BINARY_NAME}
-
-      - name: Sanity check linked libraries
-        run: |
-          echo "Linked libraries:"
-          ldd target/${{ matrix.target }}/release/${BINARY_NAME} || true
+          mkdir -p dist
+          tar -czf dist/${BINARY_NAME}-${{ matrix.target }}.tar.gz \
+            -C target/${{ matrix.target }}/release ${BINARY_NAME}
 
       - name: Upload release assets
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            *.tar.gz
+          files: dist/*.tar.gz
         env:
-          GITHUB_TOKEN: ${{ secrets.SHARKR }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
